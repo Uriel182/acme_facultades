@@ -37,7 +37,7 @@ public class AmqpEventPublicationConfig {
 
     @Bean
     public ConnectionFactory connectionFactory() {
-        CachingConnectionFactory connectionFactory = new CachingConnectionFactory("192.168.20.135");
+        CachingConnectionFactory connectionFactory = new CachingConnectionFactory("192.168.20.109");
         connectionFactory.setUsername("admin");
         connectionFactory.setPassword("admin");
         connectionFactory.setPort(5673);

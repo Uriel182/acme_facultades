@@ -7,15 +7,16 @@ import com.legosoft.facultades.commands.UpdatePermisoCommand;
 import com.legosoft.facultades.models.Permiso;
 import com.legosoft.facultades.repository.PermisoRepository;
 import com.legosoft.facultades.services.PermisoService;
+import lombok.Data;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
+@Data
 @Service("permisoService")
 public class PermisoServiceImpl implements PermisoService {
 
@@ -36,38 +37,61 @@ public class PermisoServiceImpl implements PermisoService {
 
     public CompletableFuture<String> savePermiso(Permiso permiso){
 
-        Permiso per = permisoRepository.save(permiso);
+        if (Objects.isNull(permisoRepository.findByNombre(permiso.getNombre()))){
 
-        per.setTipo(TIPO_PERMISO);
+            Permiso per = permisoRepository.save(permiso);
+
+            per.setTipo(TIPO_PERMISO);
 
         CreatePermisoCommand command = new CreatePermisoCommand(per.getIdPermiso(),per.getNombre(), per.getPermisoAcme(),
                 per.getDescripcion(),per.getPermisoInicioSesion(),per.getActivo());
 
-//        rabbitTemplate.convertAndSend("facultades","*", new Gson().toJson(command));
-        rabbitTemplate.convertAndSend("ExchangeCQRS","*", new Gson().toJson(per));
+            rabbitTemplate.convertAndSend("ExchangeCQRS","*", new Gson().toJson(per));
 
-        return commandGateway.send(command);
+            return commandGateway.send(command);
+
+        } else {
+
+            throw new IllegalArgumentException("El nombre del Permiso ya existe");
+
+        }
+
+
     }
 
     @Override
     public CompletableFuture<String> updatePermiso(Permiso permiso) {
 
-        Permiso p = permisoRepository.findById(permiso.getIdPermiso()).get();
+        Permiso p = permisoRepository.findByIdPermiso(permiso.getIdPermiso());
 
-        permisoRepository.save(permiso);
+        if (Objects.nonNull(p)){
 
-        UpdatePermisoCommand command = new UpdatePermisoCommand(p.getIdPermiso(),permiso.getNombre(),permiso.getPermisoAcme(),
-                permiso.getDescripcion(),permiso.getPermisoInicioSesion(),permiso.getActivo());
+            if (Objects.isNull(permisoRepository.findByNombre(permiso.getNombre()))){
+                permisoRepository.save(permiso);
+            } else {
+                throw new IllegalArgumentException("El nombre del Permiso ya existe");
+            }
 
-        rabbitTemplate.convertAndSend("facultades","*",new Gson().toJson(permiso));
+            UpdatePermisoCommand command = new UpdatePermisoCommand(p.getIdPermiso(),permiso.getNombre(),permiso.getPermisoAcme(),
+                    permiso.getDescripcion(),permiso.getPermisoInicioSesion(),permiso.getActivo());
 
-        return commandGateway.sendAndWait(command);
+            rabbitTemplate.convertAndSend("ExchangeCQRS","*",new Gson().toJson(permiso));
+
+            return commandGateway.sendAndWait(command);
+
+        }else {
+
+            throw new IllegalArgumentException("El Permiso que se quiere actualizar no existe");
+
+        }
+
+
     }
 
     @Override
     public CompletableFuture<String> deshabilitarPermiso(Permiso permiso) {
 
-        Permiso p = permisoRepository.findById(permiso.getIdPermiso()).get();
+        Permiso p = permisoRepository.findByIdPermiso(permiso.getIdPermiso());
 
         p.setActivo(false);
 
@@ -76,7 +100,6 @@ public class PermisoServiceImpl implements PermisoService {
         DisablePermisoCommand command = new DisablePermisoCommand(p.getIdPermiso());
 
         return commandGateway.send(command);
-
 
     }
 
