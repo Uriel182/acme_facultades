@@ -82,8 +82,11 @@ public class PermisoController {
      * @return
      */
     @GetMapping("/findPermisoById/{idPermiso}")
-    public void findPermisoById(@PathVariable("idPermiso") Long idPermiso){
+    public Permiso findPermisoById(@PathVariable("idPermiso") Long idPermiso){
 
+        logger.info("Buscando Permiso con Id: {}",idPermiso);
+
+        return permisoService.findPermisobyId(idPermiso);
 
     }
 
@@ -93,8 +96,9 @@ public class PermisoController {
      * @return
      */
     @GetMapping("/findAllPermisos")
-    public void findAll(){
+    public List<Permiso> findAll(){
 
+        return permisoService.findAll();
 
     }
 }

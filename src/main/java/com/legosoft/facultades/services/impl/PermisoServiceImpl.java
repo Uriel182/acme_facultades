@@ -13,6 +13,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -62,7 +63,7 @@ public class PermisoServiceImpl implements PermisoService {
     @Override
     public CompletableFuture<String> updatePermiso(Permiso permiso) {
 
-        Permiso p = permisoRepository.findByIdPermiso(permiso.getIdPermiso());
+        Permiso p = permisoRepository.findById(permiso.getIdPermiso()).orElse(null);
 
         if (Objects.nonNull(p)){
 
@@ -91,26 +92,45 @@ public class PermisoServiceImpl implements PermisoService {
     @Override
     public CompletableFuture<String> deshabilitarPermiso(Permiso permiso) {
 
-        Permiso p = permisoRepository.findByIdPermiso(permiso.getIdPermiso());
+        Permiso p = permisoRepository.findById(permiso.getIdPermiso()).orElse(null);
 
-        p.setActivo(false);
+        if (Objects.nonNull(p)){
 
-        permisoRepository.save(p);
+            p.setActivo(false);
 
-        DisablePermisoCommand command = new DisablePermisoCommand(p.getIdPermiso());
+            permisoRepository.save(p);
 
-        return commandGateway.send(command);
+            DisablePermisoCommand command = new DisablePermisoCommand(p.getIdPermiso());
+
+            return commandGateway.sendAndWait(command);
+
+        }else {
+
+            throw new IllegalArgumentException("El Permiso que se quiere deshabilitar no existe");
+
+        }
+
+
 
     }
 
     @Override
-    public void findPermisobyId(Long permisoId) {
+    public Permiso findPermisobyId(Long idPermiso) {
+
+        Permiso permiso = permisoRepository.findById(idPermiso).orElse(null);
+
+        if (Objects.nonNull(permiso)){
+            return permiso;
+        }else {
+            throw new IllegalArgumentException("El Permiso no existe");
+        }
 
     }
 
     @Override
-    public void findAll() {
+    public List<Permiso> findAll() {
 
+        return permisoRepository.findAll();
 
     }
 }

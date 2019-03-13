@@ -9,6 +9,7 @@ import com.legosoft.facultades.models.Rol;
 import com.legosoft.facultades.repository.PermisoRepository;
 import com.legosoft.facultades.repository.RolRepository;
 import com.legosoft.facultades.services.RolService;
+import lombok.Data;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+@Data
 @Service("rolService")
 public class RolServiceImpl implements RolService {
 
@@ -59,7 +61,7 @@ public class RolServiceImpl implements RolService {
 
         rabbitTemplate.convertAndSend("ExchangeCQRS","*", new Gson().toJson(r));
 
-        return commandGateway.send(command);
+        return commandGateway.sendAndWait(command);
 
     }
 

@@ -1,7 +1,8 @@
-package com.legosoft.facultades;
+package com.legosoft.facultades.Services;
 
 import com.google.gson.Gson;
 import com.legosoft.facultades.commands.CreatePermisoCommand;
+import com.legosoft.facultades.commands.DisablePermisoCommand;
 import com.legosoft.facultades.commands.UpdatePermisoCommand;
 import com.legosoft.facultades.models.Permiso;
 import com.legosoft.facultades.repository.PermisoRepository;
@@ -12,6 +13,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+
+import java.util.Optional;
 
 @Slf4j
 public class PermisoServiceTest {
@@ -32,9 +35,11 @@ public class PermisoServiceTest {
     private RabbitTemplate rabbitTemplate;
     private CreatePermisoCommand createPermisoCommand;
     private UpdatePermisoCommand updatePermisoCommand;
+    private DisablePermisoCommand disablePermisoCommand;
 
     private Permiso permisoNuevo;
     private Permiso permisoGuardado;
+    private Optional<Permiso> optionalGuardado;
     private Permiso permisoActualizado;
 
     @Before
@@ -52,11 +57,15 @@ public class PermisoServiceTest {
         permisoGuardado = new Permiso(ID,ID_EVENT,NOMBRE,PERMISO_ACME,DESCRIPCION,PERMISO_INICIO,ACTIVO,TIPO);
         permisoActualizado = new Permiso(ID,ID_EVENT,NOMBRE,PERMISO_ACME,DESC_UPDATE,PERMISO_INICIO,ACTIVO,TIPO);
 
+        optionalGuardado = Optional.of(permisoGuardado);
+
         createPermisoCommand = new CreatePermisoCommand(permisoGuardado.getIdPermiso(),permisoGuardado.getNombre(),permisoGuardado.getPermisoAcme(),
                 permisoGuardado.getDescripcion(),permisoGuardado.getPermisoInicioSesion(),permisoGuardado.getActivo());
 
         updatePermisoCommand = new UpdatePermisoCommand(permisoGuardado.getIdPermiso(),permisoActualizado.getNombre(),permisoActualizado.getPermisoAcme(),
                 permisoActualizado.getDescripcion(),permisoActualizado.getPermisoInicioSesion(),permisoActualizado.getActivo());
+
+        disablePermisoCommand = new DisablePermisoCommand(permisoGuardado.getIdPermiso());
 
     }
 
@@ -85,11 +94,11 @@ public class PermisoServiceTest {
     public void shoulUpdatePermiso(){
 
         log.info("Stubbing permisoRepository.findById({}) to return permisoGuardado",permisoGuardado.getIdPermiso());
-        Mockito.when(permisoRepository.findByIdPermiso(permisoActualizado.getIdPermiso())).thenReturn(permisoGuardado);
+        Mockito.when(permisoRepository.findById(permisoActualizado.getIdPermiso())).thenReturn(optionalGuardado);
 
         permisoService.updatePermiso(permisoActualizado);
 
-        Mockito.verify(permisoRepository).findByIdPermiso(permisoGuardado.getIdPermiso());
+        Mockito.verify(permisoRepository).findById(permisoGuardado.getIdPermiso());
 
         Mockito.verify(permisoRepository).save(permisoActualizado);
 
@@ -99,6 +108,21 @@ public class PermisoServiceTest {
 
     }
 
+    @Test
+    public void shouldDisablePermiso(){
 
+        log.info("Stubbing permisoRepository.findById({}) to return permisoGuardado",permisoGuardado.getIdPermiso());
+        Mockito.when(permisoRepository.findById(permisoGuardado.getIdPermiso())).thenReturn(optionalGuardado);
+
+        permisoService.deshabilitarPermiso(permisoGuardado);
+
+        permisoGuardado.setActivo(false);
+
+        Mockito.verify(permisoRepository).save(permisoGuardado);
+
+        Mockito.verify(commandGateway).sendAndWait(disablePermisoCommand);
+
+
+    }
 
 }

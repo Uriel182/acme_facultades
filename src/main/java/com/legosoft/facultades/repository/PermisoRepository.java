@@ -16,6 +16,4 @@ public interface PermisoRepository extends Neo4jRepository<Permiso,Long> {
 
     Permiso findByNombre(String nombre);
 
-    Permiso findByIdPermiso(Long idPermiso);
-
 }

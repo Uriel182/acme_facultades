@@ -29,15 +29,15 @@ public interface PermisoService {
 
     /**
      *
-     * @param permisoId
+     * @param idPermiso
      * @return
      */
-    void findPermisobyId(Long permisoId);
+    Permiso findPermisobyId(Long idPermiso);
 
     /**
      *
      * @return
      */
-    void findAll();
+    List<Permiso> findAll();
 
 }
